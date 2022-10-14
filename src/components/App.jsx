@@ -1,62 +1,55 @@
-import React, { Component } from 'react';
+import { useState, useEffect } from 'react';
 import ContactForm from './ContactForm/ContactForm';
 import Filter from './Filter/Filter';
 import ContactList from './ContactList/ContactList';
 
-export default class App extends Component {
-  state = {
-    contacts: [],
-    filter: '',
-  };
+const App = () => {
+  const [contacts, setContacts] = useState([]);
+  const [filter, setFilter] = useState('');
+  const [firstMount, setFirstMount] = useState(true);
 
-  componentDidMount() {
+  useEffect(() => {
     const lsContacts = localStorage.getItem('contacts');
     const parsedLsContacts = JSON.parse(lsContacts);
 
     if (parsedLsContacts) {
-      this.setState({ contacts: parsedLsContacts });
+      setContacts(parsedLsContacts);
     }
-  }
+  }, []);
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.contacts !== this.state.contacts) {
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-    }
-  }
-
-  handleAddContactForm = contact => {
-    const { contacts } = this.state;
-    if (contacts && contacts.some(el => el.number === contact.number)) {
-      window.alert(`${contact.number} is already exist in your phonebook`);
+  useEffect(() => {
+    if (firstMount) {
+      setFirstMount(false);
       return;
     }
 
-    if (contacts && contacts.some(el => el.name === contact.name)) {
-      window.alert(`${contact.name} is already exist in your phonebook`);
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts, firstMount]);
+
+  const handleAddContactForm = newContact => {
+    if (contacts && contacts.some(el => el.number === newContact.number)) {
+      window.alert(`${newContact.number} is already exist in your phonebook`);
       return;
     }
 
-    this.setState(prevState => ({
-      contacts: [...prevState.contacts, contact],
-    }));
+    if (contacts && contacts.some(el => el.name === newContact.name)) {
+      window.alert(`${newContact.name} is already exist in your phonebook`);
+      return;
+    }
+
+    setContacts(prevContacts => [...prevContacts, newContact]);
   };
 
-  handleDeleteContact = userId => {
-    const { contacts, filter } = this.state;
+  const handleDeleteContact = userId => {
+    const updatedContactsList = contacts.filter(el => el.id !== userId);
 
-    const updatedContactList = contacts.filter(el => el.id !== userId);
+    const updateFilteredList = filter && filter.filter(el => el.id !== userId);
 
-    const updateFilterdList = filter && filter.filter(el => el.id !== userId);
-
-    this.setState(() => ({
-      contacts: updatedContactList,
-      filter: updateFilterdList,
-    }));
+    setContacts(updatedContactsList);
+    setFilter(updateFilteredList);
   };
 
-  handleContactsFilter = namePart => {
-    const { contacts } = this.state;
-
+  const handleContactsFilter = namePart => {
     let FiltredContacts = contacts.filter(e =>
       e.name.toLowerCase().includes(namePart.toLowerCase())
     );
@@ -65,25 +58,23 @@ export default class App extends Component {
       FiltredContacts = '';
     }
 
-    this.setState(() => ({
-      filter: FiltredContacts,
-    }));
+    setFilter(FiltredContacts);
   };
 
-  render() {
-    return (
-      <>
-        <h1>Phonebook</h1>
-        <ContactForm onAddContact={this.handleAddContactForm} />
+  return (
+    <>
+      <h1>Phonebook</h1>
+      <ContactForm onAddContact={handleAddContactForm} />
 
-        <h2>Contacts</h2>
-        <Filter onContactsFilter={this.handleContactsFilter} />
-        <ContactList
-          filter={this.state.filter}
-          contacts={this.state.contacts}
-          onDeleteContact={this.handleDeleteContact}
-        />
-      </>
-    );
-  }
-}
+      <h2>Contacts</h2>
+      <Filter onContactsFilter={handleContactsFilter} />
+      <ContactList
+        filter={filter}
+        contacts={contacts}
+        onDeleteContact={handleDeleteContact}
+      />
+    </>
+  );
+};
+
+export default App;
