@@ -6,7 +6,6 @@ import ContactList from './ContactList/ContactList';
 const App = () => {
   const [contacts, setContacts] = useState([]);
   const [filter, setFilter] = useState('');
-  const [firstMount, setFirstMount] = useState(true);
 
   useEffect(() => {
     const lsContacts = localStorage.getItem('contacts');
@@ -18,13 +17,13 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (firstMount) {
-      setFirstMount(false);
+    if (contacts.length === 0) {
+      localStorage.clear('contacts');
       return;
     }
 
     localStorage.setItem('contacts', JSON.stringify(contacts));
-  }, [contacts, firstMount]);
+  }, [contacts]);
 
   const handleAddContactForm = newContact => {
     if (contacts && contacts.some(el => el.number === newContact.number)) {
